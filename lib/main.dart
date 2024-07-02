@@ -1,20 +1,48 @@
+import 'dart:async';
+
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:music_search/app_repository.dart';
+import 'package:hydrated_bloc/hydrated_bloc.dart';
 import 'package:music_search/generated/l10n.dart';
 import 'package:music_search/home_screen.dart';
+import 'package:music_search/internal_state/app_repository.dart';
+import 'package:music_search/internal_state/persistent_bloc.dart';
 import 'package:music_search/utils/debug.dart';
+import 'package:path_provider/path_provider.dart';
 
-void main() {
+void main() async {
   initializeDebugFunctions(kDebugMode);
 
-  runApp(
-      RepositoryProvider(create: (_) => AppRepository(), child: const MyApp()));
+  WidgetsFlutterBinding.ensureInitialized();
+
+  HydratedBloc.storage = await HydratedStorage.build(
+    storageDirectory: kIsWeb
+        ? HydratedStorage.webStorageDirectory
+        : await getApplicationDocumentsDirectory(),
+  );
+
+  runApp(RepositoryProvider(
+      create: (_) => AppRepository(),
+      child:
+          BlocProvider(create: (_) => PersistentBloc(), child: const MyApp())));
 }
 
-class MyApp extends StatelessWidget {
+class MyApp extends StatefulWidget {
   const MyApp({super.key});
+
+  @override
+  State<StatefulWidget> createState() => MyAppState();
+}
+
+class MyAppState extends State<MyApp> {
+  late Future<void> _appRepositoryInitiationFuture;
+
+  @override
+  void initState() {
+    _appRepositoryInitiationFuture = AppRepository.ensureInitialized();
+    super.initState();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -23,6 +51,7 @@ class MyApp extends StatelessWidget {
       localizationsDelegates: const [S.delegate],
       supportedLocales: const [Locale.fromSubtags(languageCode: 'en')],
       home: FutureBuilder(
+        future: _appRepositoryInitiationFuture,
         builder: (context, state) {
           return AnimatedSwitcher(
             duration: const Duration(seconds: 1),
@@ -31,7 +60,6 @@ class MyApp extends StatelessWidget {
                 : _getSplashScreen(context),
           );
         },
-        future: AppRepository.ensureInitialized(),
       ),
     );
   }
