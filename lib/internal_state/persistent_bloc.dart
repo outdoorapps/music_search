@@ -1,6 +1,5 @@
 import 'package:dart_mappable/dart_mappable.dart';
 import 'package:hydrated_bloc/hydrated_bloc.dart';
-import 'package:music_search/utils/debug.dart';
 import 'package:music_search/utils/enums.dart';
 
 part 'persistent_bloc.mapper.dart';
@@ -16,7 +15,6 @@ class PersistentBloc extends HydratedBloc<PersistentEvent, PersistentState> {
     on<UpdatePersistentStateEvent>((event, emit) {
       switch (event.type) {
         case PersistentType.sortingType:
-          p('${event.value}');
           emit(state.copyWith(sortingType: event.value));
           break;
       }
