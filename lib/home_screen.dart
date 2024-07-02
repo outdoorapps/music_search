@@ -1,6 +1,9 @@
 import 'package:carousel_slider/carousel_slider.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:flutter_minimalist_audio_player/flutter_minimalist_audio_player.dart';
+import 'package:local_hero/local_hero.dart';
+import 'package:music_search/audio_player.dart';
 import 'package:music_search/generated/l10n.dart';
 import 'package:music_search/home_screen_bloc.dart';
 import 'package:music_search/internal_state/app_repository.dart';
@@ -18,6 +21,8 @@ class HomeScreen extends StatefulWidget {
 
 class HomeScreenState extends State<HomeScreen> {
   final SearchController _searchController = SearchController();
+  List<Track> _randomTracks = [];
+  var _carouselIndex = 0;
   late FocusNode _focusNode;
 
   @override
@@ -43,62 +48,74 @@ class HomeScreenState extends State<HomeScreen> {
             ),
           ),
         ),
-        body: BlocBuilder<HomeScreenBloc, HomeScreenBlocState>(
-          builder: (context, state) {
-            final tracks = AppRepository.itunesResponse?.tracks;
-            if (tracks == null) {
-              return Center(
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    SizedBox(
-                        width: 64.0,
-                        height: 64.0,
-                        child: Visibility(
-                          visible: state.appRepositoryRefreshStatus !=
-                              BlocStatus.done,
-                          child: const CircularProgressIndicator(),
-                        )),
-                    Padding(
-                      padding: const EdgeInsets.all(8.0),
-                      child: Text(
-                        S.of(context).fail_to_cache,
-                        style: Theme.of(context).textTheme.titleLarge,
+        body: LocalHeroScope(
+          duration: const Duration(milliseconds: 300),
+          curve: Curves.easeInOut,
+          child: BlocBuilder<HomeScreenBloc, HomeScreenBlocState>(
+            builder: (context, state) {
+              final tracks = AppRepository.itunesResponse?.tracks;
+              if (tracks == null) {
+                return Center(
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      SizedBox(
+                          width: 64.0,
+                          height: 64.0,
+                          child: Visibility(
+                            visible: state.appRepositoryRefreshStatus !=
+                                BlocStatus.done,
+                            child: const CircularProgressIndicator(),
+                          )),
+                      Padding(
+                        padding: const EdgeInsets.all(8.0),
+                        child: Text(
+                          S.of(context).fail_to_cache,
+                          style: Theme.of(context).textTheme.titleLarge,
+                        ),
                       ),
-                    ),
-                    ElevatedButton.icon(
-                      onPressed: () {
-                        context
-                            .read<HomeScreenBloc>()
-                            .add(RefreshAppRepositoryEvent());
-                      },
-                      label: Text(S.of(context).refresh),
-                      icon: const Icon(Icons.refresh),
-                    )
-                  ],
-                ),
-              );
-            } else {
-              if (state.selectedTrack == null) {
-                final randomTracks = [...tracks]..shuffle();
-                return Padding(
-                  padding: const EdgeInsets.only(top: 36.0),
-                  child: CarouselSlider(
+                      ElevatedButton.icon(
+                        onPressed: () {
+                          context
+                              .read<HomeScreenBloc>()
+                              .add(RefreshAppRepositoryEvent());
+                        },
+                        label: Text(S.of(context).refresh),
+                        icon: const Icon(Icons.refresh),
+                      )
+                    ],
+                  ),
+                );
+              } else {
+                if (_randomTracks.isEmpty) {
+                  _randomTracks = [...tracks]..shuffle();
+                }
+                if (state.selectedTrack == null) {
+                  return Padding(
+                    padding: const EdgeInsets.only(top: 36.0),
+                    child: CarouselSlider(
                       items: List<Widget>.generate(10, (index) {
-                        final randomTrack = randomTracks[index];
+                        final randomTrack = _randomTracks[index];
                         return CarouselTrackItem(
                           randomTrack: randomTrack,
                           heroTag: randomTrack.trackId,
                         );
                       }),
-                      options:
-                          CarouselOptions(height: 400.0, aspectRatio: 4 / 3)),
-                );
-              } else {
-                return SizedBox();
+                      options: CarouselOptions(
+                          initialPage: _carouselIndex,
+                          height: 400.0,
+                          aspectRatio: 4 / 3,
+                          onPageChanged: (index, _) {
+                            _carouselIndex = index;
+                          }),
+                    ),
+                  );
+                } else {
+                  return AudioPlayer(track: state.selectedTrack!);
+                }
               }
-            }
-          },
+            },
+          ),
         ));
   }
 
@@ -239,6 +256,7 @@ class HomeScreenState extends State<HomeScreen> {
             overflow: TextOverflow.ellipsis,
           ),
           subtitle: Text(track.collectionName),
+          trailing: MinimalistAudioPlayer(media: track.previewUrl),
           onTap: () {
             context.read<HomeScreenBloc>().add(ChangeSelectedTrackEvent(track));
             _searchController.closeView(query);
@@ -276,7 +294,7 @@ class CarouselTrackItem extends StatelessWidget {
             direction: Axis.vertical,
             spacing: 8.0,
             children: [
-              Hero(
+              LocalHero(
                 tag: heroTag,
                 child: Image.network(
                     randomTrack.artworkUrl100.replaceAll('100x100', '300x300')),
