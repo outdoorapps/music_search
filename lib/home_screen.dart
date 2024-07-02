@@ -1,9 +1,12 @@
+import 'package:carousel_slider/carousel_slider.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:music_search/generated/l10n.dart';
+import 'package:music_search/home_screen_bloc.dart';
 import 'package:music_search/internal_state/app_repository.dart';
 import 'package:music_search/internal_state/persistent_bloc.dart';
-import 'package:music_search/utils/debug.dart';
+import 'package:music_search/json_model/itunes_response.dart';
+import 'package:music_search/utils/disabled_focus_node.dart';
 import 'package:music_search/utils/enums.dart';
 
 class HomeScreen extends StatefulWidget {
@@ -19,8 +22,8 @@ class HomeScreenState extends State<HomeScreen> {
 
   @override
   void initState() {
-    _focusNode = FocusNode(canRequestFocus: false);
     super.initState();
+    _focusNode = DisabledFocusNode();
   }
 
   @override
@@ -33,17 +36,70 @@ class HomeScreenState extends State<HomeScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
         appBar: AppBar(
-          flexibleSpace: Padding(
-            padding:
-                //todo check top padding with iOS
-                EdgeInsets.only(
-                    top: MediaQuery.of(context).viewPadding.top,
-                    left: 16.0,
-                    right: 16.0),
-            child: _getSearchBar(),
+          flexibleSpace: SafeArea(
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16.0),
+              child: _getSearchBar(),
+            ),
           ),
         ),
-        body: const SizedBox());
+        body: BlocBuilder<HomeScreenBloc, HomeScreenBlocState>(
+          builder: (context, state) {
+            final tracks = AppRepository.itunesResponse?.tracks;
+            if (tracks == null) {
+              return Center(
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    SizedBox(
+                        width: 64.0,
+                        height: 64.0,
+                        child: Visibility(
+                          visible: state.appRepositoryRefreshStatus !=
+                              BlocStatus.done,
+                          child: const CircularProgressIndicator(),
+                        )),
+                    Padding(
+                      padding: const EdgeInsets.all(8.0),
+                      child: Text(
+                        S.of(context).fail_to_cache,
+                        style: Theme.of(context).textTheme.titleLarge,
+                      ),
+                    ),
+                    ElevatedButton.icon(
+                      onPressed: () {
+                        context
+                            .read<HomeScreenBloc>()
+                            .add(RefreshAppRepositoryEvent());
+                      },
+                      label: Text(S.of(context).refresh),
+                      icon: const Icon(Icons.refresh),
+                    )
+                  ],
+                ),
+              );
+            } else {
+              if (state.selectedTrack == null) {
+                final randomTracks = [...tracks]..shuffle();
+                return Padding(
+                  padding: const EdgeInsets.only(top: 36.0),
+                  child: CarouselSlider(
+                      items: List<Widget>.generate(10, (index) {
+                        final randomTrack = randomTracks[index];
+                        return CarouselTrackItem(
+                          randomTrack: randomTrack,
+                          heroTag: randomTrack.trackId,
+                        );
+                      }),
+                      options:
+                          CarouselOptions(height: 400.0, aspectRatio: 4 / 3)),
+                );
+              } else {
+                return SizedBox();
+              }
+            }
+          },
+        ));
   }
 
   Widget _getSearchBar() {
@@ -57,10 +113,25 @@ class HomeScreenState extends State<HomeScreen> {
               textInputAction: TextInputAction.search,
               controller: searchController,
               focusNode: _focusNode,
-              leading: IconButton(
-                icon: const Icon(Icons.search),
-                onPressed: () => searchController.openView(),
-              ),
+              leading:
+                  BlocSelector<HomeScreenBloc, HomeScreenBlocState, Track?>(
+                      selector: (state) {
+                return state.selectedTrack;
+              }, builder: (context, track) {
+                return IconButton(
+                  icon: Icon(track == null ? Icons.search : Icons.arrow_back),
+                  onPressed: () {
+                    if (track == null) {
+                      searchController.openView();
+                      FocusScope.of(context).unfocus();
+                    } else {
+                      context
+                          .read<HomeScreenBloc>()
+                          .add(ChangeSelectedTrackEvent(null));
+                    }
+                  },
+                );
+              }),
               onTap: () {
                 searchController.openView();
                 FocusScope.of(context).unfocus();
@@ -141,34 +212,94 @@ class HomeScreenState extends State<HomeScreen> {
   }
 
   List<Widget> _getResultItems(String query) {
-    final results = query.isEmpty
-        ? AppRepository.itunesResponse?.results
-        : AppRepository.itunesResponse?.results
-            .where((e) =>
-                e.trackName.toLowerCase().contains(query) ||
-                e.collectionName.toLowerCase().contains(query))
-            .toList();
+    final results = AppRepository.itunesResponse?.tracks
+        .where((e) =>
+            e.trackName.toLowerCase().contains(query) ||
+            e.collectionName.toLowerCase().contains(query))
+        .toList();
     final sortingType = context.read<PersistentBloc>().state.sortingType;
     if (results != null && results.isNotEmpty) {
       switch (sortingType) {
         case SortingType.song:
           results.sort((a, b) => a.trackName.compareTo(b.trackName));
-          p('sort by song'); //todo
           break;
         case SortingType.album:
-          p('sort by album');
           results.sort((a, b) => a.collectionName.compareTo(b.collectionName));
           break;
       }
       return List<Widget>.generate(results.length, (index) {
+        final track = results[index];
         return ListTile(
-          title: Text(results[index].trackName),
-          subtitle: Text(results[index].collectionName),
-          onTap: () {},
+          leading: SizedBox(
+              height: 60.0,
+              width: 60.0,
+              child: Image.network(track.artworkUrl60)),
+          title: Text(
+            track.trackName,
+            overflow: TextOverflow.ellipsis,
+          ),
+          subtitle: Text(track.collectionName),
+          onTap: () {
+            context.read<HomeScreenBloc>().add(ChangeSelectedTrackEvent(track));
+            _searchController.closeView(query);
+          },
         );
       });
     } else {
       return [];
     }
+  }
+}
+
+class CarouselTrackItem extends StatelessWidget {
+  const CarouselTrackItem({
+    super.key,
+    required this.randomTrack,
+    required this.heroTag,
+  });
+
+  final Track randomTrack;
+  final int heroTag;
+
+  @override
+  Widget build(BuildContext context) {
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(8.0),
+        child: InkWell(
+          onTap: () {
+            context
+                .read<HomeScreenBloc>()
+                .add(ChangeSelectedTrackEvent(randomTrack));
+          },
+          child: Wrap(
+            direction: Axis.vertical,
+            spacing: 8.0,
+            children: [
+              Hero(
+                tag: heroTag,
+                child: Image.network(
+                    randomTrack.artworkUrl100.replaceAll('100x100', '300x300')),
+              ),
+              SizedBox(
+                width: 300.0,
+                child: Text(
+                  randomTrack.trackName,
+                  style: Theme.of(context).textTheme.titleMedium,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ),
+              SizedBox(
+                width: 300.0,
+                child: Text(
+                  randomTrack.collectionName,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
   }
 }

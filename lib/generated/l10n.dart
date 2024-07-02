@@ -109,6 +109,26 @@ class S {
       args: [],
     );
   }
+
+  /// `Failed to cache from itunes`
+  String get fail_to_cache {
+    return Intl.message(
+      'Failed to cache from itunes',
+      name: 'fail_to_cache',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Retry`
+  String get refresh {
+    return Intl.message(
+      'Retry',
+      name: 'refresh',
+      desc: '',
+      args: [],
+    );
+  }
 }
 
 class AppLocalizationDelegate extends LocalizationsDelegate<S> {

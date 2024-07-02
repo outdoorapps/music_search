@@ -4,5 +4,7 @@
 	"no_results": "No results",
 	"album": "Album",
 	"song_name": "Song name",
-	"sort_by": "Sort by"
+	"sort_by": "Sort by",
+	"fail_to_cache": "Failed to cache from itunes",
+	"refresh": "Retry"
 }

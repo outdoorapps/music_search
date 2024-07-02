@@ -9,26 +9,26 @@ ItunesResponse iTunesResponseFromJson(String str) => ItunesResponse.fromJson(jso
 String iTunesResponseToJson(ItunesResponse data) => json.encode(data.toJson());
 
 class ItunesResponse {
-  final int resultCount;
-  final List<ItunesResult> results;
+  final int trackCount;
+  final List<Track> tracks;
 
   ItunesResponse({
-    required this.resultCount,
-    required this.results,
+    required this.trackCount,
+    required this.tracks,
   });
 
   factory ItunesResponse.fromJson(Map<String, dynamic> json) => ItunesResponse(
-    resultCount: json["resultCount"],
-    results: List<ItunesResult>.from(json["results"].map((x) => ItunesResult.fromJson(x))),
+    trackCount: json["resultCount"],
+    tracks: List<Track>.from(json["results"].map((x) => Track.fromJson(x))),
   );
 
   Map<String, dynamic> toJson() => {
-    "resultCount": resultCount,
-    "results": List<dynamic>.from(results.map((x) => x.toJson())),
+    "resultCount": trackCount,
+    "results": List<dynamic>.from(tracks.map((x) => x.toJson())),
   };
 }
 
-class ItunesResult {
+class Track {
   final String wrapperType;
   final String kind;
   final int artistId;
@@ -62,7 +62,7 @@ class ItunesResult {
   final bool? isStreamable;
   final String? contentAdvisoryRating;
 
-  ItunesResult({
+  Track({
     required this.wrapperType,
     required this.kind,
     required this.artistId,
@@ -97,7 +97,7 @@ class ItunesResult {
     this.contentAdvisoryRating,
   });
 
-  factory ItunesResult.fromJson(Map<String, dynamic> json) => ItunesResult(
+  factory Track.fromJson(Map<String, dynamic> json) => Track(
     wrapperType: json["wrapperType"],
     kind: json["kind"],
     artistId: json["artistId"],

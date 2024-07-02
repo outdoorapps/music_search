@@ -25,7 +25,10 @@ class MessageLookup extends MessageLookupByLibrary {
         "album": MessageLookupByLibrary.simpleMessage("Album"),
         "caching_itunes_data":
             MessageLookupByLibrary.simpleMessage("Caching iTunes data..."),
+        "fail_to_cache":
+            MessageLookupByLibrary.simpleMessage("Failed to cache from itunes"),
         "no_results": MessageLookupByLibrary.simpleMessage("No results"),
+        "refresh": MessageLookupByLibrary.simpleMessage("Retry"),
         "search": MessageLookupByLibrary.simpleMessage("Search"),
         "song_name": MessageLookupByLibrary.simpleMessage("Song name"),
         "sort_by": MessageLookupByLibrary.simpleMessage("Sort by")

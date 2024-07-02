@@ -42,7 +42,29 @@
 						</translations>
 					</concept_node>
 					<concept_node>
+						<name>fail_to_cache</name>
+						<description/>
+						<comment/>
+						<translations>
+							<translation>
+								<language>en-US</language>
+								<approved>false</approved>
+							</translation>
+						</translations>
+					</concept_node>
+					<concept_node>
 						<name>no_results</name>
+						<description/>
+						<comment/>
+						<translations>
+							<translation>
+								<language>en-US</language>
+								<approved>false</approved>
+							</translation>
+						</translations>
+					</concept_node>
+					<concept_node>
+						<name>refresh</name>
 						<description/>
 						<comment/>
 						<translations>

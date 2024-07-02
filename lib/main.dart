@@ -6,6 +6,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:hydrated_bloc/hydrated_bloc.dart';
 import 'package:music_search/generated/l10n.dart';
 import 'package:music_search/home_screen.dart';
+import 'package:music_search/home_screen_bloc.dart';
 import 'package:music_search/internal_state/app_repository.dart';
 import 'package:music_search/internal_state/persistent_bloc.dart';
 import 'package:music_search/utils/debug.dart';
@@ -56,7 +57,8 @@ class MyAppState extends State<MyApp> {
           return AnimatedSwitcher(
             duration: const Duration(seconds: 1),
             child: state.connectionState == ConnectionState.done
-                ? const HomeScreen()
+                ? BlocProvider(
+                    create: (_) => HomeScreenBloc(), child: const HomeScreen())
                 : _getSplashScreen(context),
           );
         },
