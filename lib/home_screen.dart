@@ -39,84 +39,96 @@ class HomeScreenState extends State<HomeScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-        appBar: AppBar(
-          flexibleSpace: SafeArea(
-            child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16.0),
-              child: _getSearchBar(),
+    return BlocBuilder<HomeScreenBloc, HomeScreenBlocState>(
+        builder: (context, state) {
+      final tracks = AppRepository.itunesResponse?.tracks;
+      final track = context.read<HomeScreenBloc>().state.selectedTrack;
+      return PopScope(
+        canPop: track == null,
+        onPopInvoked: (bool? didPop) {
+          if (track != null) {
+            context.read<HomeScreenBloc>().add(ChangeSelectedTrackEvent(null));
+          }
+        },
+        child: Scaffold(
+            appBar: AppBar(
+              flexibleSpace: SafeArea(
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 16.0),
+                  child: _getSearchBar(),
+                ),
+              ),
             ),
-          ),
-        ),
-        body: LocalHeroScope(
-          duration: const Duration(milliseconds: 300),
-          curve: Curves.easeInOut,
-          child: BlocBuilder<HomeScreenBloc, HomeScreenBlocState>(
-            builder: (context, state) {
-              final tracks = AppRepository.itunesResponse?.tracks;
-              if (tracks == null) {
-                return Center(
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      SizedBox(
-                          width: 64.0,
-                          height: 64.0,
-                          child: Visibility(
-                            visible: state.appRepositoryRefreshStatus !=
-                                BlocStatus.done,
-                            child: const CircularProgressIndicator(),
-                          )),
-                      Padding(
-                        padding: const EdgeInsets.all(8.0),
-                        child: Text(
-                          S.of(context).fail_to_cache,
-                          style: Theme.of(context).textTheme.titleLarge,
-                        ),
+            body: LocalHeroScope(
+              duration: const Duration(milliseconds: 300),
+              curve: Curves.easeInOut,
+              child: Builder(
+                builder: (context) {
+                  if (tracks == null) {
+                    return Center(
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          SizedBox(
+                              width: 64.0,
+                              height: 64.0,
+                              child: Visibility(
+                                visible: state.appRepositoryRefreshStatus !=
+                                    BlocStatus.done,
+                                child: const CircularProgressIndicator(),
+                              )),
+                          Padding(
+                            padding: const EdgeInsets.all(8.0),
+                            child: Text(
+                              S.of(context).fail_to_cache,
+                              style: Theme.of(context).textTheme.titleLarge,
+                            ),
+                          ),
+                          ElevatedButton.icon(
+                            onPressed: () {
+                              context
+                                  .read<HomeScreenBloc>()
+                                  .add(RefreshAppRepositoryEvent());
+                            },
+                            label: Text(S.of(context).refresh),
+                            icon: const Icon(Icons.refresh),
+                          )
+                        ],
                       ),
-                      ElevatedButton.icon(
-                        onPressed: () {
-                          context
-                              .read<HomeScreenBloc>()
-                              .add(RefreshAppRepositoryEvent());
-                        },
-                        label: Text(S.of(context).refresh),
-                        icon: const Icon(Icons.refresh),
-                      )
-                    ],
-                  ),
-                );
-              } else {
-                if (_randomTracks.isEmpty) {
-                  _randomTracks = [...tracks]..shuffle();
-                }
-                if (state.selectedTrack == null) {
-                  return Padding(
-                    padding: const EdgeInsets.only(top: 36.0),
-                    child: CarouselSlider(
-                      items: List<Widget>.generate(10, (index) {
-                        final randomTrack = _randomTracks[index];
-                        return CarouselTrackItem(
-                          randomTrack: randomTrack,
-                          heroTag: randomTrack.trackId,
-                        );
-                      }),
-                      options: CarouselOptions(
-                          initialPage: _carouselIndex,
-                          height: 400.0,
-                          aspectRatio: 4 / 3,
-                          onPageChanged: (index, _) {
-                            _carouselIndex = index;
+                    );
+                  } else {
+                    if (_randomTracks.isEmpty) {
+                      _randomTracks = [...tracks]..shuffle();
+                    }
+                    if (state.selectedTrack == null) {
+                      return Padding(
+                        padding: const EdgeInsets.only(top: 36.0),
+                        child: CarouselSlider(
+                          items: List<Widget>.generate(10, (index) {
+                            final randomTrack = _randomTracks[index];
+                            return CarouselTrackItem(
+                              randomTrack: randomTrack,
+                              heroTag: randomTrack.trackId,
+                            );
                           }),
-                    ),
-                  );
-                } else {
-                  return AudioPlayer(track: state.selectedTrack!);
-                }
-              }
-            },
-          ),
-        ));
+                          options: CarouselOptions(
+                              initialPage: _carouselIndex,
+                              height: 400.0,
+                              aspectRatio: 4 / 3,
+                              onPageChanged: (index, _) {
+                                _carouselIndex = index;
+                              }),
+                        ),
+                      );
+                    } else {
+                      return AudioPlayer(track: state.selectedTrack!);
+                    }
+                  }
+                },
+              ),
+            )),
+      );
+    });
   }
 
   Widget _getSearchBar() {

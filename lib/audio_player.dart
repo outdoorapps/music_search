@@ -16,7 +16,6 @@ class AudioPlayer extends StatefulWidget {
 class AudioPlayerState extends State<AudioPlayer> {
   late VideoPlayerController _videoPlayerController;
   late ChewieAudioController _chewieAudioController;
-  late Future<void> _videoPlayerFuture;
 
   @override
   void initState() {
@@ -28,7 +27,6 @@ class AudioPlayerState extends State<AudioPlayer> {
       autoPlay: true,
       looping: true,
     );
-    _videoPlayerFuture = _videoPlayerController.initialize();
   }
 
   @override
@@ -71,13 +69,7 @@ class AudioPlayerState extends State<AudioPlayer> {
               widget.track.artistName,
               overflow: TextOverflow.ellipsis,
             ),
-            FutureBuilder(
-                future: _videoPlayerFuture,
-                builder: (context, state) {
-                  return state.connectionState == ConnectionState.done
-                      ? ChewieAudio(controller: (_chewieAudioController))
-                      : const SizedBox();
-                })
+            ChewieAudio(controller: (_chewieAudioController)),
           ],
         ),
       ),
