@@ -10,6 +10,7 @@ import 'package:music_search/home_screen_bloc.dart';
 import 'package:music_search/internal_state/app_repository.dart';
 import 'package:music_search/internal_state/persistent_bloc.dart';
 import 'package:music_search/utils/debug.dart';
+import 'package:music_search/utils/theme.dart';
 import 'package:path_provider/path_provider.dart';
 
 void main() async {
@@ -47,10 +48,13 @@ class MyAppState extends State<MyApp> {
 
   @override
   Widget build(BuildContext context) {
+    final materialTheme = MaterialTheme(Theme.of(context).textTheme);
     return MaterialApp(
       debugShowCheckedModeBanner: kDebugMode,
       localizationsDelegates: const [S.delegate],
       supportedLocales: const [Locale.fromSubtags(languageCode: 'en')],
+      theme: materialTheme.light(),
+      darkTheme: materialTheme.dark(),
       home: FutureBuilder(
         future: _appRepositoryInitiationFuture,
         builder: (context, state) {
