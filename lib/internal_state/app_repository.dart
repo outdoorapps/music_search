@@ -5,6 +5,6 @@ class AppRepository {
   static ItunesResponse? itunesResponse;
 
   static Future<void> ensureInitialized() async {
-    itunesResponse = await WebServices.getItunesResponse();
+    itunesResponse ??= await WebServices.getItunesResponse();
   }
 }

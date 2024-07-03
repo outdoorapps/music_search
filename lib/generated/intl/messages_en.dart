@@ -31,6 +31,7 @@ class MessageLookup extends MessageLookupByLibrary {
         "refresh": MessageLookupByLibrary.simpleMessage("Retry"),
         "search": MessageLookupByLibrary.simpleMessage("Search"),
         "song_name": MessageLookupByLibrary.simpleMessage("Song name"),
-        "sort_by": MessageLookupByLibrary.simpleMessage("Sort by")
+        "sort_by": MessageLookupByLibrary.simpleMessage("Sort by"),
+        "you_may_like": MessageLookupByLibrary.simpleMessage("You may like...")
       };
 }

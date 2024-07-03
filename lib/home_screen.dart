@@ -11,6 +11,7 @@ import 'package:music_search/internal_state/persistent_bloc.dart';
 import 'package:music_search/json_model/itunes_response.dart';
 import 'package:music_search/utils/disabled_focus_node.dart';
 import 'package:music_search/utils/enums.dart';
+import 'package:music_search/utils/search.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -101,24 +102,34 @@ class HomeScreenState extends State<HomeScreen> {
                       _randomTracks = [...tracks]..shuffle();
                     }
                     if (state.selectedTrack == null) {
-                      return Padding(
-                        padding: const EdgeInsets.only(top: 36.0),
-                        child: CarouselSlider(
-                          items: List<Widget>.generate(10, (index) {
-                            final randomTrack = _randomTracks[index];
-                            return CarouselTrackItem(
-                              randomTrack: randomTrack,
-                              heroTag: randomTrack.trackId,
-                            );
-                          }),
-                          options: CarouselOptions(
-                              initialPage: _carouselIndex,
-                              height: 400.0,
-                              aspectRatio: 4 / 3,
-                              onPageChanged: (index, _) {
-                                _carouselIndex = index;
-                              }),
-                        ),
+                      return Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Padding(
+                            padding: const EdgeInsets.only(
+                                left: 24.0, top: 24.0, bottom: 8.0),
+                            child: Text(
+                              S.of(context).you_may_like,
+                              style: Theme.of(context).textTheme.titleLarge,
+                            ),
+                          ),
+                          CarouselSlider(
+                            items: List<Widget>.generate(10, (index) {
+                              final randomTrack = _randomTracks[index];
+                              return CarouselTrackItem(
+                                randomTrack: randomTrack,
+                                heroTag: randomTrack.trackId,
+                              );
+                            }),
+                            options: CarouselOptions(
+                                initialPage: _carouselIndex,
+                                height: 400.0,
+                                aspectRatio: 4 / 3,
+                                onPageChanged: (index, _) {
+                                  _carouselIndex = index;
+                                }),
+                          ),
+                        ],
                       );
                     } else {
                       return AudioPlayer(track: state.selectedTrack!);
@@ -241,21 +252,10 @@ class HomeScreenState extends State<HomeScreen> {
   }
 
   List<Widget> _getResultItems(String query) {
-    final results = AppRepository.itunesResponse?.tracks
-        .where((e) =>
-            e.trackName.toLowerCase().contains(query) ||
-            e.collectionName.toLowerCase().contains(query))
-        .toList();
+    final results = Search.query(query);
     final sortingType = context.read<PersistentBloc>().state.sortingType;
-    if (results != null && results.isNotEmpty) {
-      switch (sortingType) {
-        case SortingType.song:
-          results.sort((a, b) => a.trackName.compareTo(b.trackName));
-          break;
-        case SortingType.album:
-          results.sort((a, b) => a.collectionName.compareTo(b.collectionName));
-          break;
-      }
+    if (results.isNotEmpty) {
+      Search.sortBySortingType(results, sortingType);
       return List<Widget>.generate(results.length, (index) {
         final track = results[index];
         return ListTile(

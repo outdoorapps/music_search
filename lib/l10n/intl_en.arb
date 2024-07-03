@@ -6,5 +6,6 @@
 	"song_name": "Song name",
 	"sort_by": "Sort by",
 	"fail_to_cache": "Failed to cache from itunes",
-	"refresh": "Retry"
+	"refresh": "Retry",
+	"you_may_like": "You may like..."
 }

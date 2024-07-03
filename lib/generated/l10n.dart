@@ -129,6 +129,16 @@ class S {
       args: [],
     );
   }
+
+  /// `You may like...`
+  String get you_may_like {
+    return Intl.message(
+      'You may like...',
+      name: 'you_may_like',
+      desc: '',
+      args: [],
+    );
+  }
 }
 
 class AppLocalizationDelegate extends LocalizationsDelegate<S> {
